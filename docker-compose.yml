@@ -1,0 +1,22 @@
+version: '2'
+
+services:
+  db:
+    image: mongo:3.4
+    volumes:
+      - mongo-db:/data/db
+      - mongo-config-db:/data/configdb
+  dev:
+    build: .
+    environment:
+      - RACK_ENV=development
+      - MONGODB_URI=mongodb://db:27017/gt
+    depends_on:
+      - db
+    volumes:
+      - .:/home/apps/app
+      - ~/data/gems-2.3:/.gem
+
+volumes:
+  mongo-db:
+  mongo-config-db:
