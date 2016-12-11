@@ -33,7 +33,7 @@ helpers do
   end
 
   def fetch_token
-    pattern = /^Bearer /.freeze
+    pattern = /^Bearer /
     header = request.env['HTTP_AUTHORIZATION']
 
     return '' unless header && header.match(pattern)

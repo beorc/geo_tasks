@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'spec_helper.rb'
 
 describe 'Tasks' do
@@ -143,7 +144,7 @@ describe 'Tasks' do
 
   describe 'PUT /tasks/:id/assign' do
     let(:request_block) do
-      ->(task_id) do
+      lambda do |task_id|
         put "/tasks/#{task_id}/assign", {}, headers
       end
     end
@@ -217,7 +218,7 @@ describe 'Tasks' do
 
   describe 'PUT /tasks/:id/finish' do
     let(:request_block) do
-      ->(task_id) do
+      lambda do |task_id|
         put "/tasks/#{task_id}/finish", {}, headers
       end
     end

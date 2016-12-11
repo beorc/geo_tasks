@@ -1,10 +1,11 @@
+# frozen_string_literal: true
 require 'mongoid'
 require 'mongoid/geospatial'
 require 'aasm'
 
 module Mongoid
   module Document
-    def as_json(options={})
+    def as_json(options = {})
       attrs = super(options)
       attrs['id'] = attrs['_id'].to_s
       attrs
@@ -13,7 +14,6 @@ module Mongoid
 end
 
 class User
-
   include Mongoid::Document
 
   field :token, type: String
@@ -26,16 +26,14 @@ class User
   validates :token, presence: true, uniqueness: { case_sensitive: true }
   validates :role, inclusion: { in: %w(manager driver) }
 
-  index({ token: 1 }, { unique: true })
+  index({ token: 1 }, unique: true)
 
   def self.generate_token
     SecureRandom.urlsafe_base64
   end
-
 end
 
 class Task
-
   include Mongoid::Document
   include Mongoid::Timestamps
   include Mongoid::Geospatial
@@ -67,12 +65,11 @@ class Task
 
   spatial_scope :pickup_point
 
-  index({ state: 1 })
+  index(state: 1)
 
   def assign_to!(user)
     self.user = user
     assign
     save!
   end
-
 end

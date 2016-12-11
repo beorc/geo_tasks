@@ -5,7 +5,7 @@ module Sinatra
       'manager' == user.role || forbidden!
     end
 
-    def authorize_task_assign!(user, task)
+    def authorize_task_assign!(user, _task)
       'driver' == user.role || forbidden!
     end
 
