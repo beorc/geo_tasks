@@ -3,18 +3,24 @@ source 'https://rubygems.org'
 
 ruby '2.3.3'
 
+gem 'aasm'
 gem 'bson_ext'
 gem 'mongoid'
+gem 'mongoid-geospatial', require: 'mongoid/geospatial'
 gem 'puma'
 gem 'rack'
+gem 'rake'
 gem 'sinatra'
 
 group :development do
+  gem 'pry', require: false
   gem 'rubocop', require: false
 end
 
 group :test do
-  gem 'rspec'
+  gem 'cranky'
+  gem 'database_cleaner'
   gem 'rack-test'
+  gem 'rspec'
   gem 'simplecov', require: false
 end
