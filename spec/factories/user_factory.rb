@@ -1,6 +1,6 @@
+# frozen_string_literal: true
 module Cranky
   class Factory
-
     def user
       define(
         name: "name#{n}",
@@ -8,6 +8,5 @@ module Cranky
         role: 'manager'
       )
     end
-
   end
 end

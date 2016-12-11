@@ -7,7 +7,9 @@ development:
   <<: *default
 
 test:
-  <<: *default
+  clients:
+    default:
+      uri: <%= ENV['MONGODB_TEST_URI'] %>
 
 production:
   <<: *default

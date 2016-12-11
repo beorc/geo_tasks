@@ -11,6 +11,7 @@ services:
     environment:
       - RACK_ENV=development
       - MONGODB_URI=mongodb://db:27017/gt
+      - MONGODB_TEST_URI=mongodb://db:27017/gt_test
     depends_on:
       - db
     volumes:
