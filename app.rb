@@ -86,3 +86,13 @@ put '/tasks/:id/assign' do
 
   status 204
 end
+
+put '/tasks/:id/finish' do
+  task = Task.find(params[:id])
+
+  authorize_task_finish!(current_user, task)
+
+  task.finish!
+
+  status 204
+end

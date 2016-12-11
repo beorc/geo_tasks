@@ -214,4 +214,56 @@ describe 'Tasks' do
       end
     end
   end
+
+  describe 'PUT /tasks/:id/finish' do
+    let(:request_block) do
+      ->(task_id) do
+        put "/tasks/#{task_id}/finish", {}, headers
+      end
+    end
+    let(:user) { Factory.create!(:user, role: 'driver') }
+    let(:task) { Factory.create!(:task, state: 'assigned', user: user) }
+
+    context 'given a valid token' do
+      it 'finishes a task' do
+        request_block.call(task.id)
+
+        expect(last_response.status).to eq 204
+        expect(task.reload.state).to eq 'done'
+      end
+    end
+
+    context 'given a done task' do
+      let(:task) { Factory.create!(:task, state: 'done', user: user) }
+
+      it 'does not update a task' do
+        request_block.call(task.id)
+
+        expect(last_response.status).to eq 422
+        expect(last_response.body).to eq 'Event \'finish\' cannot transition from \'done\'. '
+      end
+    end
+
+    context 'given an another user\'s task' do
+      let(:task) { Factory.create!(:task, state: 'assigned', user: Factory.create(:user)) }
+
+      it 'does not update a task' do
+        request_block.call(task.id)
+
+        expect(last_response.status).to eq 403
+        expect(last_response.body).to eq 'Forbidden'
+      end
+    end
+
+    context 'without token' do
+      let(:headers) { {} }
+
+      it 'does not update a task' do
+        request_block.call(task.id)
+
+        expect(last_response.status).to eq 401
+        expect(last_response.body).to eq 'Authorization Required'
+      end
+    end
+  end
 end

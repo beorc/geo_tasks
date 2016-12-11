@@ -9,6 +9,10 @@ module Sinatra
       'driver' == user.role || forbidden!
     end
 
+    def authorize_task_finish!(user, task)
+      ('driver' == user.role && task.user == user) || forbidden!
+    end
+
     private
 
     def forbidden!
