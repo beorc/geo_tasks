@@ -13,6 +13,16 @@ configure do
     status 400
     e.message
   end
+
+  error AASM::InvalidTransition do |e|
+    status 422
+    e.message
+  end
+
+  error Mongoid::Errors::DocumentNotFound do |e|
+    status 404
+    e.message
+  end
 end
 
 helpers do
@@ -65,4 +75,14 @@ get '/tasks' do
 
   tasks = Task.available.nearby(location)
   tasks.to_json
+end
+
+put '/tasks/:id/assign' do
+  task = Task.find(params[:id])
+
+  authorize_task_assign!(current_user, task)
+
+  task.assign_to!(current_user)
+
+  status 204
 end

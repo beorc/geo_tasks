@@ -58,6 +58,7 @@ class Task
   end
 
   belongs_to :user, required: false
+
   field :pickup_point, type: Point, spatial: true
   field :delivery_point, type: Point
 
@@ -67,5 +68,11 @@ class Task
   spatial_scope :pickup_point
 
   index({ state: 1 })
+
+  def assign_to!(user)
+    self.user = user
+    assign
+    save!
+  end
 
 end

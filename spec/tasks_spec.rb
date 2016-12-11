@@ -140,4 +140,78 @@ describe 'Tasks' do
       end
     end
   end
+
+  describe 'PUT /tasks/:id/assign' do
+    let(:request_block) do
+      ->(task_id) do
+        put "/tasks/#{task_id}/assign", {}, headers
+      end
+    end
+
+    let(:task) { Factory.create!(:task) }
+    let(:user) { Factory.create!(:user, role: 'driver') }
+
+    context 'given a valid token' do
+      it 'assigns task to a driver' do
+        request_block.call(task.id)
+
+        expect(last_response.status).to eq 204
+        task.reload
+        expect(task.state).to eq 'assigned'
+        expect(task.user).to eq user
+      end
+    end
+
+    context 'given a manager token' do
+      let(:user) { Factory.create!(:user, role: 'manager') }
+
+      it 'does not update a task' do
+        request_block.call(task.id)
+
+        expect(last_response.status).to eq 403
+        expect(last_response.body).to eq 'Forbidden'
+      end
+    end
+
+    context 'given an assigned task' do
+      let(:task) { Factory.create!(:task, state: 'assigned') }
+
+      it 'does not update a task' do
+        request_block.call(task.id)
+
+        expect(last_response.status).to eq 422
+        expect(last_response.body).to eq 'Event \'assign\' cannot transition from \'assigned\'. '
+      end
+    end
+
+    context 'given a done task' do
+      let(:task) { Factory.create!(:task, state: 'done') }
+
+      it 'does not update a task' do
+        request_block.call(task.id)
+
+        expect(last_response.status).to eq 422
+        expect(last_response.body).to eq 'Event \'assign\' cannot transition from \'done\'. '
+      end
+    end
+
+    context 'given a not existing task' do
+      it 'does not update a task' do
+        request_block.call(123)
+
+        expect(last_response.status).to eq 404
+      end
+    end
+
+    context 'without token' do
+      let(:headers) { {} }
+
+      it 'does not update a task' do
+        request_block.call(task.id)
+
+        expect(last_response.status).to eq 401
+        expect(last_response.body).to eq 'Authorization Required'
+      end
+    end
+  end
 end
