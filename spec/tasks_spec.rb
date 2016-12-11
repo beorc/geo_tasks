@@ -84,4 +84,60 @@ describe 'Tasks' do
       end
     end
   end
+
+  describe 'GET /tasks' do
+    let(:params) do
+      { lat: 44.106666, lng: -73.935832 }
+    end
+
+    let(:request_block) do
+      -> { get '/tasks', params, headers }
+    end
+
+    context 'given a valid token' do
+      let(:user) { Factory.create!(:user, role: 'driver') }
+
+      let!(:tasks) do
+        [
+          Factory.create!(:task, pickup_point: { lat: 44.106669, lng: -73.935835 }),
+          Factory.create!(:task, pickup_point: { lat: 44.106668, lng: -73.935834 }),
+          Factory.create!(:task, pickup_point: { lat: 44.106667, lng: -73.935833 })
+        ]
+      end
+
+      before(:each) do
+        Factory.create!(:task, state: 'assigned')
+        Factory.create!(:task, state: 'done')
+      end
+
+      it 'renders tasks with status "created"' do
+        request_block.call
+
+        expect(last_response.status).to eq 200
+        expect(json_body.map { |t| t['id'] }).to eq tasks.reverse.map { |t| t.id.to_s }
+      end
+    end
+
+    context 'without token' do
+      let(:headers) { {} }
+
+      it 'does not render tasks' do
+        request_block.call
+
+        expect(last_response.status).to eq 401
+        expect(last_response.body).to eq 'Authorization Required'
+      end
+    end
+
+    context 'given a not existing token' do
+      let(:token) { 'invalid' }
+
+      it 'does not render tasks' do
+        request_block.call
+
+        expect(last_response.status).to eq 401
+        expect(last_response.body).to eq 'Bad credentials'
+      end
+    end
+  end
 end

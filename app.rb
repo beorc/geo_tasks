@@ -30,6 +30,12 @@ helpers do
 
     header.sub(pattern, '')
   end
+
+  def require_param(name)
+    params.fetch(name) do
+      throw :halt, [400, "Required parameter missing: #{name}"]
+    end
+  end
 end
 
 before do
@@ -52,4 +58,11 @@ post '/tasks' do
     status 422
     { errors: task.errors.to_h }.to_json
   end
+end
+
+get '/tasks' do
+  location = [require_param('lng').to_f, require_param('lat').to_f]
+
+  tasks = Task.available.nearby(location)
+  tasks.to_json
 end
