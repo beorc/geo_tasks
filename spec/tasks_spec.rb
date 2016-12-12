@@ -1,6 +1,30 @@
 # frozen_string_literal: true
 require 'spec_helper.rb'
 
+shared_examples 'authentication required' do |parameter|
+  context 'without token' do
+    let(:headers) { {} }
+
+    it 'does not create a task' do
+      request_block.call
+
+      expect(last_response.status).to eq 401
+      expect(last_response.body).to eq 'Authorization Required'
+    end
+  end
+
+  context 'given a not existing token' do
+    let(:token) { 'invalid' }
+
+    it 'does not create a task' do
+      request_block.call
+
+      expect(last_response.status).to eq 401
+      expect(last_response.body).to eq 'Bad credentials'
+    end
+  end
+end
+
 describe 'Tasks' do
   let(:user) { Factory.create!(:user, role: 'manager') }
   let(:token) { user.token }
@@ -51,28 +75,6 @@ describe 'Tasks' do
         end
       end
 
-      context 'without token' do
-        let(:headers) { {} }
-
-        it 'does not create a task' do
-          request_block.call
-
-          expect(last_response.status).to eq 401
-          expect(last_response.body).to eq 'Authorization Required'
-        end
-      end
-
-      context 'given a not existing token' do
-        let(:token) { 'invalid' }
-
-        it 'does not create a task' do
-          request_block.call
-
-          expect(last_response.status).to eq 401
-          expect(last_response.body).to eq 'Bad credentials'
-        end
-      end
-
       context 'given a driver token' do
         let(:user) { Factory.create!(:user, role: 'driver') }
 
@@ -83,6 +85,8 @@ describe 'Tasks' do
           expect(last_response.body).to eq 'Forbidden'
         end
       end
+
+      include_examples 'authentication required'
     end
   end
 
@@ -119,33 +123,13 @@ describe 'Tasks' do
       end
     end
 
-    context 'without token' do
-      let(:headers) { {} }
-
-      it 'does not render tasks' do
-        request_block.call
-
-        expect(last_response.status).to eq 401
-        expect(last_response.body).to eq 'Authorization Required'
-      end
-    end
-
-    context 'given a not existing token' do
-      let(:token) { 'invalid' }
-
-      it 'does not render tasks' do
-        request_block.call
-
-        expect(last_response.status).to eq 401
-        expect(last_response.body).to eq 'Bad credentials'
-      end
-    end
+    include_examples 'authentication required'
   end
 
   describe 'PUT /tasks/:id/assign' do
     let(:request_block) do
-      lambda do |task_id|
-        put "/tasks/#{task_id}/assign", {}, headers
+      lambda do
+        put "/tasks/#{task.id}/assign", {}, headers
       end
     end
 
@@ -154,7 +138,7 @@ describe 'Tasks' do
 
     context 'given a valid token' do
       it 'assigns task to a driver' do
-        request_block.call(task.id)
+        request_block.call
 
         expect(last_response.status).to eq 204
         task.reload
@@ -167,7 +151,7 @@ describe 'Tasks' do
       let(:user) { Factory.create!(:user, role: 'manager') }
 
       it 'does not update a task' do
-        request_block.call(task.id)
+        request_block.call
 
         expect(last_response.status).to eq 403
         expect(last_response.body).to eq 'Forbidden'
@@ -178,7 +162,7 @@ describe 'Tasks' do
       let(:task) { Factory.create!(:task, state: 'assigned') }
 
       it 'does not update a task' do
-        request_block.call(task.id)
+        request_block.call
 
         expect(last_response.status).to eq 422
         expect(last_response.body).to eq 'Event \'assign\' cannot transition from \'assigned\'. '
@@ -189,7 +173,7 @@ describe 'Tasks' do
       let(:task) { Factory.create!(:task, state: 'done') }
 
       it 'does not update a task' do
-        request_block.call(task.id)
+        request_block.call
 
         expect(last_response.status).to eq 422
         expect(last_response.body).to eq 'Event \'assign\' cannot transition from \'done\'. '
@@ -197,29 +181,22 @@ describe 'Tasks' do
     end
 
     context 'given a not existing task' do
+      let(:task) { Factory.build(:task, id: '123') }
+
       it 'does not update a task' do
-        request_block.call(123)
+        request_block.call
 
         expect(last_response.status).to eq 404
       end
     end
 
-    context 'without token' do
-      let(:headers) { {} }
-
-      it 'does not update a task' do
-        request_block.call(task.id)
-
-        expect(last_response.status).to eq 401
-        expect(last_response.body).to eq 'Authorization Required'
-      end
-    end
+    include_examples 'authentication required'
   end
 
   describe 'PUT /tasks/:id/finish' do
     let(:request_block) do
-      lambda do |task_id|
-        put "/tasks/#{task_id}/finish", {}, headers
+      lambda do
+        put "/tasks/#{task.id}/finish", {}, headers
       end
     end
     let(:user) { Factory.create!(:user, role: 'driver') }
@@ -227,7 +204,7 @@ describe 'Tasks' do
 
     context 'given a valid token' do
       it 'finishes a task' do
-        request_block.call(task.id)
+        request_block.call
 
         expect(last_response.status).to eq 204
         expect(task.reload.state).to eq 'done'
@@ -238,7 +215,7 @@ describe 'Tasks' do
       let(:task) { Factory.create!(:task, state: 'done', user: user) }
 
       it 'does not update a task' do
-        request_block.call(task.id)
+        request_block.call
 
         expect(last_response.status).to eq 422
         expect(last_response.body).to eq 'Event \'finish\' cannot transition from \'done\'. '
@@ -249,22 +226,13 @@ describe 'Tasks' do
       let(:task) { Factory.create!(:task, state: 'assigned', user: Factory.create(:user)) }
 
       it 'does not update a task' do
-        request_block.call(task.id)
+        request_block.call
 
         expect(last_response.status).to eq 403
         expect(last_response.body).to eq 'Forbidden'
       end
     end
 
-    context 'without token' do
-      let(:headers) { {} }
-
-      it 'does not update a task' do
-        request_block.call(task.id)
-
-        expect(last_response.status).to eq 401
-        expect(last_response.body).to eq 'Authorization Required'
-      end
-    end
+    include_examples 'authentication required'
   end
 end
