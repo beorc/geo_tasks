@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require 'spec_helper.rb'
 
-shared_examples 'authentication required' do |parameter|
+shared_examples 'authentication required' do
   context 'without token' do
     let(:headers) { {} }
 
@@ -40,10 +40,10 @@ describe 'Tasks' do
       {
         pickup_point: { lat: 44.106667, lng: -73.935833 },
         delivery_point: { lat: 44.106668, lng: -73.935834 }
-      }
+      }.to_json
     end
     let(:request_block) do
-      -> { post '/tasks', params.to_json, headers }
+      -> { post '/tasks', params, headers }
     end
 
     context 'given valid token' do
@@ -63,7 +63,7 @@ describe 'Tasks' do
           let(:params) do
             {
               pickup_point: { lat: 44.106667, lng: -73.935833 }
-            }
+            }.to_json
           end
 
           it 'does not create task and renders validation errors' do
@@ -83,6 +83,17 @@ describe 'Tasks' do
 
           expect(last_response.status).to eq 403
           expect(last_response.body).to eq 'Forbidden'
+        end
+      end
+
+      context 'given a malformed body' do
+        let(:params) { 'invalid body' }
+
+        it 'does not create a task' do
+          request_block.call
+
+          expect(last_response.status).to eq 400
+          expect(last_response.body).to eq '743: unexpected token at \'invalid body\''
         end
       end
 
@@ -120,6 +131,19 @@ describe 'Tasks' do
 
         expect(last_response.status).to eq 200
         expect(json_body.map { |t| t['id'] }).to eq tasks.reverse.map { |t| t.id.to_s }
+      end
+    end
+
+    context 'missing required parameter' do
+      let(:params) do
+        { lng: -73.935832 }
+      end
+
+      it 'does not render tasks' do
+        request_block.call
+
+        expect(last_response.status).to eq 400
+        expect(last_response.body).to eq 'Required parameter missing: lat'
       end
     end
 
