@@ -23,6 +23,11 @@ configure do
     status 404
     e.message
   end
+
+  error Mongoid::Errors::StaleDocument do |e|
+    status 409
+    e.message
+  end
 end
 
 helpers do

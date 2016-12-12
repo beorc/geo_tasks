@@ -29,6 +29,8 @@ GEM
       mongo (~> 2.3)
     mongoid-geospatial (5.0.0)
       mongoid (>= 5.0.0.beta)
+    mongoid_optimistic_locking (0.0.4)
+      mongoid (>= 3.0.0rc)
     parser (2.3.3.1)
       ast (~> 2.2)
     powerpack (0.1.1)
@@ -90,6 +92,7 @@ DEPENDENCIES
   database_cleaner
   mongoid
   mongoid-geospatial
+  mongoid_optimistic_locking
   pry
   puma
   rack

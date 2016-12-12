@@ -7,6 +7,7 @@ gem 'aasm'
 gem 'bson_ext'
 gem 'mongoid'
 gem 'mongoid-geospatial', require: 'mongoid/geospatial'
+gem 'mongoid_optimistic_locking'
 gem 'puma'
 gem 'rack'
 gem 'rake'
@@ -21,6 +22,6 @@ group :test do
   gem 'cranky'
   gem 'database_cleaner'
   gem 'rack-test'
-  gem 'rspec'
+  gem 'rspec', require: false
   gem 'simplecov', require: false
 end

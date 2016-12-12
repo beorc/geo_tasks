@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 require 'mongoid'
 require 'mongoid/geospatial'
+require 'mongoid/optimistic_locking'
 require 'aasm'
 
 module Mongoid
@@ -37,6 +38,7 @@ class Task
   include Mongoid::Document
   include Mongoid::Timestamps
   include Mongoid::Geospatial
+  include Mongoid::OptimisticLocking
   include AASM
 
   field :state
