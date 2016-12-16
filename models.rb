@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 require 'mongoid'
 require 'mongoid/geospatial'
-require 'mongoid/optimistic_locking'
 require 'aasm'
 
 module Mongoid
   module Document
     def as_json(options = {})
-      attrs = super(options)
+      attrs = super
       attrs['id'] = attrs['_id'].to_s
       attrs
     end
@@ -38,7 +37,6 @@ class Task
   include Mongoid::Document
   include Mongoid::Timestamps
   include Mongoid::Geospatial
-  include Mongoid::OptimisticLocking
   include AASM
 
   field :state
@@ -57,21 +55,45 @@ class Task
     end
   end
 
-  belongs_to :user, required: false
+  has_one :task_assignment
 
   field :pickup_point, type: Point, spatial: true
   field :delivery_point, type: Point
 
   validates :pickup_point, :delivery_point, presence: true
   validates :state, inclusion: { in: %w(available assigned done) }
+  validates :task_assignment, presence: true, if: :assigned?
 
   spatial_scope :pickup_point
 
   index(state: 1)
 
   def assign_to!(user)
-    self.user = user
-    assign
-    save!
+    begin
+      TaskAssignment.create!(task: self, user: user)
+    rescue Mongo::Error::OperationFailure => e
+      handle_duplicate_key_error(e, 'Task is already assigned') || raise(e)
+    end
+
+    assign!
   end
+
+  def user
+    TaskAssignment.where(task: self).first.try(:user)
+  end
+
+  private
+
+  def handle_duplicate_key_error(e, message)
+    e.message =~ /^E11000 / && throw(:halt, [409, message])
+  end
+end
+
+class TaskAssignment
+  include Mongoid::Document
+
+  belongs_to :task
+  belongs_to :user
+
+  index({ task_id: 1 }, unique: true)
 end

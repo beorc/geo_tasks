@@ -13,6 +13,7 @@ namespace :db do
 
     Task.create_indexes
     User.create_indexes
+    TaskAssignment.create_indexes
   end
 
   task :seed do

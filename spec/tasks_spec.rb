@@ -122,7 +122,7 @@ describe 'Tasks' do
       end
 
       before(:each) do
-        Factory.create!(:task, state: 'assigned')
+        Factory.create!(:task_assignment, user: user)
         Factory.create!(:task, state: 'done')
       end
 
@@ -183,13 +183,14 @@ describe 'Tasks' do
     end
 
     context 'given an assigned task' do
-      let(:task) { Factory.create!(:task, state: 'assigned') }
+      let(:task_assignment) { Factory.create!(:task_assignment, user: user) }
+      let(:task) { task_assignment.task }
 
       it 'does not update a task' do
         request_block.call
 
-        expect(last_response.status).to eq 422
-        expect(last_response.body).to eq 'Event \'assign\' cannot transition from \'assigned\'. '
+        expect(last_response.status).to eq 409
+        expect(last_response.body).to eq 'Task is already assigned'
       end
     end
 
@@ -214,6 +215,19 @@ describe 'Tasks' do
       end
     end
 
+    context 'given a stale task' do
+      let!(:task_assignment) do
+        Factory.create!(:task_assignment, task: task, user: Factory.create(:user))
+      end
+
+      it 'does not update a task' do
+        request_block.call
+
+        expect(last_response.status).to eq 409
+        expect(last_response.body).to eq 'Task is already assigned'
+      end
+    end
+
     include_examples 'authentication required'
   end
 
@@ -224,7 +238,8 @@ describe 'Tasks' do
       end
     end
     let(:user) { Factory.create!(:user, role: 'driver') }
-    let(:task) { Factory.create!(:task, state: 'assigned', user: user) }
+    let(:task_assignment) { Factory.create!(:task_assignment, user: user) }
+    let(:task) { task_assignment.task }
 
     context 'given a valid token' do
       it 'finishes a task' do
@@ -236,7 +251,8 @@ describe 'Tasks' do
     end
 
     context 'given a done task' do
-      let(:task) { Factory.create!(:task, state: 'done', user: user) }
+      let(:task) { Factory.create!(:task, state: 'done') }
+      let!(:task_assignment) { Factory.create!(:task_assignment, task: task, user: user) }
 
       it 'does not update a task' do
         request_block.call
@@ -247,7 +263,8 @@ describe 'Tasks' do
     end
 
     context 'given an another user\'s task' do
-      let(:task) { Factory.create!(:task, state: 'assigned', user: Factory.create(:user)) }
+      let(:task_assignment) { Factory.create!(:task_assignment, user: Factory.create(:user)) }
+      let(:task) { task_assignment.task }
 
       it 'does not update a task' do
         request_block.call

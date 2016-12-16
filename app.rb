@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 require 'sinatra'
-require 'mongoid'
-require 'mongoid/geospatial'
 require_relative 'models'
 require_relative 'sinatra/authentication'
 require_relative 'sinatra/authorization'
@@ -21,11 +19,6 @@ configure do
 
   error Mongoid::Errors::DocumentNotFound do |e|
     status 404
-    e.message
-  end
-
-  error Mongoid::Errors::StaleDocument do |e|
-    status 409
     e.message
   end
 end
